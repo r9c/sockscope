@@ -7,12 +7,12 @@ https://github.com/r9c/sockscope
 
 ## Why not just a port scanner?
 Port scanners (like nmap) tell you what’s open *from the outside*.  
-**SockScope** runs *on your host* and shows the **process**, **PID**, **full path**, **permissions**, and simple **risk tags**:
-- ✅ **ok**
-- 🟠 **uncommon port**
-- 🔵 **ephemeral**
-- 🔴 **suspicious path** (`/tmp`, `/dev/shm`)
-- 🔴 **world-writable exe**
+**This** runs *on your host* and shows the **process**, **PID**, **full path**, **permissions**, and simple **risk tags**:
+- **ok**
+- **uncommon port**
+- **ephemeral**
+- **suspicious path** (`/tmp`, `/dev/shm`)
+- **world-writable exe**
 
 It also has:
 - **Baseline** snapshot → highlights **NEW** listeners since baseline
