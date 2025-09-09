@@ -1,9 +1,17 @@
+<<<<<<< HEAD
 # Logs
 logs
+=======
+# Node
+node_modules/
+dist/
+.pnp.*
+>>>>>>> origin/main
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+<<<<<<< HEAD
 pnpm-debug.log*
 lerna-debug.log*
 
@@ -22,3 +30,39 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+=======
+
+# Vite
+.vite/
+vite.config.ts.timestamp-*
+
+# Rust/Tauri
+src-tauri/target/
+src-tauri/**/.fingerprint/
+src-tauri/.cargo/
+src-tauri/Cargo.lock
+
+# Tauri build artifacts
+src-tauri/target/release/
+src-tauri/target/debug/
+src-tauri/gen/
+**/*.app
+**/*.dmg
+**/*.msi
+**/*.deb
+**/*.AppImage
+**/*.rpm
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Misc
+.env
+.env.*
+>>>>>>> origin/main
