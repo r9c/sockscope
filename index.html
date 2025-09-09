@@ -1,0 +1,229 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SockScope</title>
+
+    <style>
+      :root { 
+        --glass: rgba(28, 30, 34, 0.82); 
+        --stroke: rgba(255, 255, 255, 0.12); 
+        --fg: #e8e8e8; 
+      }
+
+      html, body {
+        height: 100%; margin: 0; color: var(--fg);
+        font: 14px/1.4 ui-sans-serif, system-ui, Segoe UI, Roboto;
+        background: transparent; overflow: hidden;
+      }
+
+      .app {
+        height: 100%; display: flex; flex-direction: column;
+        background: var(--glass);
+        backdrop-filter: blur(16px) saturate(120%); 
+        -webkit-backdrop-filter: blur(16px) saturate(120%);
+        border: 1px solid var(--stroke); 
+        border-radius: 12px; 
+        overflow: hidden; 
+        box-sizing: border-box;
+      }
+
+      .toolbar {
+        height: 48px; display: flex; gap: 8px; align-items: center; 
+        padding: 0 12px; border-bottom: 1px solid var(--stroke);
+      }
+      .toolbar input {
+        flex: 1; background: transparent; color: var(--fg);
+        border: 1px solid var(--stroke); border-radius: 8px; 
+        padding: 8px; outline: none;
+      }
+      .toolbar .btn { 
+        background: transparent; color: var(--fg); 
+        border: 1px solid var(--stroke); border-radius: 8px; 
+        padding: 6px 10px; cursor: pointer; 
+      }
+      .toolbar .btn:hover { background: rgba(255,255,255,.06); }
+
+      .content { display: flex; flex: 1; overflow: hidden; }
+      .sidebar { width: 260px; border-right: 1px solid var(--stroke); padding: 10px; overflow: auto; }
+      .main { flex: 1; overflow: auto; }
+
+      .row {
+        display: grid;
+        grid-template-columns: 1.2fr 84px 70px 90px minmax(260px,1fr) 150px;
+        gap: 10px; padding: 8px 12px; 
+        border-bottom: 1px solid var(--stroke); 
+        align-items: center;
+      }
+      .head { position: sticky; top: 0; background: rgba(0,0,0,.15); font-weight: 600; z-index: 1; }
+      .badge { border: 1px solid var(--stroke); border-radius: 999px; padding: 2px 8px; font-size: 12px; display: inline-block; }
+
+      /* Path ellipsis + copy button */
+      .row > div:nth-child(5) { min-width: 0; }
+      .cell-path { position: relative; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; padding-right: 56px; }
+      .copy-btn {
+        position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+        opacity: 0; transition: opacity .15s ease;
+        border: 1px solid var(--stroke); background: rgba(255,255,255,.06); 
+        color: var(--fg);
+        border-radius: 6px; padding: 2px 8px; font-size: 12px; cursor: pointer;
+      }
+      .row:hover .copy-btn { opacity: 1; }
+
+      /* Row actions */
+      .actions { display: flex; gap: 8px; justify-content: flex-end; align-items: center; }
+      .mini-btn {
+        border: 1px solid var(--stroke); border-radius: 8px; padding: 4px 8px;
+        background: rgba(255,255,255,.04); color: var(--fg); font-size: 12px; cursor: pointer;
+      }
+      .mini-btn:hover { background: rgba(255,255,255,.08); }
+      .mini-btn.end { background: rgba(255,64,64,.10); border-color: rgba(255,64,64,.35); }
+      .mini-btn.end:hover { background: rgba(255,64,64,.18); }
+
+      /* Risk badges */
+      .risk-badge {
+        display:inline-block; padding:2px 8px; border-radius:999px;
+        border:1px solid var(--stroke); font-size:12px; line-height:1.6;
+        white-space:nowrap; background:rgba(255,255,255,.04);
+      }
+      .risk-badge.ok { background: rgba(0,200,0,.15); border-color: rgba(0,200,0,.4); color: #6f6; font-weight: 500; opacity: 1; }
+      .risk-badge.uncommon_port { background:rgba(255,128,0,.12); border-color:rgba(255,128,0,.25); }
+      .risk-badge.ephemeral     { background:rgba(128,128,255,.12); border-color:rgba(128,128,255,.25); }
+      .risk-badge.suspicious_path { background:rgba(255,64,64,.12); border-color:rgba(255,64,64,.25); }
+      .risk-badge.ww-exe        { background:rgba(255,64,64,.12); border-color:rgba(255,64,64,.25); }
+
+      /* Sidebar widgets */
+      .group { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--stroke); }
+      .group:first-child { margin-top: 0; padding-top: 0; border-top: none; }
+      .toggle { display: flex; gap: 8px; align-items: center; margin: 6px 0; }
+      .counts { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px; }
+      .counts .pill { border:1px solid var(--stroke); border-radius: 999px; padding: 4px 8px; font-size:12px; display:flex; justify-content:space-between; }
+
+      /* "Clear baseline" */
+      #clearBaseline {
+        background: rgba(0,0,0,.15);
+        border: 1px solid var(--stroke);
+        color: var(--fg);
+        border-radius: 8px;
+        padding: 8px 10px;
+      }
+      #clearBaseline:hover { background: rgba(0,0,0,.22); }
+
+      /* select */
+      .mini-select {
+        background: rgba(0,0,0,.15);
+        color: var(--fg);
+        border: 1px solid var(--stroke);
+        border-radius: 8px;
+        padding: 4px 28px 4px 8px;
+        outline: none;
+        font-size: 12px;
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+
+        background-image:
+          linear-gradient(45deg, transparent 50%, var(--fg) 50%),
+          linear-gradient(135deg, var(--fg) 50%, transparent 50%),
+          linear-gradient(to right, transparent, transparent);
+        background-position:
+          calc(100% - 16px) 9px,
+          calc(100% - 10px) 9px,
+          0 0;
+        background-size: 6px 6px, 6px 6px, 100% 100%;
+        background-repeat: no-repeat;
+      }
+
+      /* tighten spacing */
+      .group .toggle { gap: 6px; }
+      .group .toggle > span { min-width: 0 !important; }
+
+      /* --- Custom dark checkboxes --- */
+      .toggle input[type="checkbox"] {
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        width: 14px; height: 14px;
+        border: 1px solid var(--stroke);
+        border-radius: 4px;
+        background: rgba(0,0,0,.15);
+        cursor: pointer;
+        display: inline-block;
+        position: relative;
+      }
+      .toggle input[type="checkbox"]:checked {
+        background: rgba(0,0,0,.35);
+        border-color: rgba(255,255,255,.25);
+      }
+      .toggle input[type="checkbox"]:checked::after {
+        content: "";
+        position: absolute;
+        top: 2px; left: 4px;
+        width: 4px; height: 8px;
+        border: solid var(--fg);
+        border-width: 0 2px 2px 0;
+        transform: rotate(45deg);
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="app">
+      <div class="toolbar">
+        <input id="filter" placeholder="Filter by process, port, or path…" />
+        <button id="baseline" class="btn">Save baseline</button>
+        <button id="rescan" class="btn">Rescan</button>
+      </div>
+
+      <div class="content">
+        <div class="sidebar">
+          <div class="badge" id="summary">Loading…</div>
+
+          <div class="group">
+            <div style="opacity:.8;margin-bottom:6px;">Filters</div>
+            <label class="toggle"><input type="checkbox" id="onlyNew"> <span>Only NEW</span></label>
+            <label class="toggle"><input type="checkbox" id="onlyRisky"> <span>Only risky</span></label>
+          </div>
+
+          <div class="group">
+            <div style="opacity:.8;margin-bottom:6px;">Auto-refresh</div>
+            <label class="toggle"><input type="checkbox" id="autoRefresh"> <span>Enable</span></label>
+            <div class="toggle">
+              <span style="opacity:.8;">Every</span>
+              <select id="autoInterval" class="mini-select">
+                <option value="5">5s</option>
+                <option value="10" selected>10s</option>
+                <option value="30">30s</option>
+                <option value="60">60s</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="group">
+            <div style="opacity:.8;margin-bottom:6px;">Counts</div>
+            <div class="counts" id="riskCounts"></div>
+          </div>
+
+          <div class="group">
+            <div style="opacity:.8;margin-bottom:6px;">New since baseline</div>
+            <ul id="newList"></ul>
+          </div>
+
+          <div class="group">
+            <button id="clearBaseline">Clear baseline</button>
+          </div>
+        </div>
+
+        <div class="main">
+          <div class="row head">
+            <div>Process</div><div>PID</div><div>Proto</div><div>Port</div><div>Path</div><div>Actions / Risk</div>
+          </div>
+          <div id="table"></div>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="/main.js"></script>
+  </body>
+</html>

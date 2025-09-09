@@ -1,0 +1,27 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "productName": "SockScope",
+  "version": "0.1.0",
+  "identifier": "com.sockscope.app",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build",
+    "devUrl": "http://localhost:5173",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "SockScope",
+        "width": 1100,
+        "height": 700,
+        "resizable": true,
+        "fullscreen": false,
+        "decorations": true,
+        "transparent": true
+      }
+    ],
+    "security": { "csp": null }
+  },
+  "bundle": { "active": false }
+}
